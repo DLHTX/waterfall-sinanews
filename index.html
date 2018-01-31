@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>waterfall-sinanews</title>
+    <script src="//code.jquery.com/jquery-2.1.1.min.js"></script>
+    <style>
+        *{
+            margin: 0;
+            padding: 0;
+        }
+        main{
+            max-width: 1290px;
+            margin: 0vmax auto;
+            position: relative;
+
+            border: 1px solid #f6695c;
+        }
+        .new-box{
+            width: 280px;
+            margin: 10px 10px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            position: absolute;
+            transition: all .4s;
+
+         }
+
+        img{
+            width: 280px;
+            height: 170px;
+        }
+        .new-box h4{
+            border-bottom: 1px solid #ccc;
+            padding: 5px 0 5px 0;
+        }
+        .new-box p{
+            color: #797573;
+            font-size: 13px;
+            margin-top: 5px;
+        }
+        .clearfix::after{
+            content: '';
+            display: block;
+            clear: both;
+        }
+        a{
+            text-decoration: none;
+            color : #ccc
+        }
+        
+
+
+    </style>
+</head>
+<body>
+<main class="clearfix">
+
+    <!--<div class="new-box">-->
+        <!--<div class="img-box"><img src="sprite.png" alt=""></div>-->
+        <!--<div class="detail">-->
+            <!--<h3></h3>-->
+            <!--<p></p>-->
+        <!--</div>-->
+    <!--</div>-->
+
+
+
+</main>
+
+
+
+
+
+
+
+<script>
+ var isLoading = false
+ var perPageCount = 17
+ var curPage =1
+ var clock
+
+
+ function getData() {
+    if(isLoading) return
+     isLoading = true
+    $.ajax({
+        url: 'http://platform.sina.com.cn/slide/album_tech',
+        dataType: 'jsonp',
+        jsonp:"jsoncallback",
+        data: {
+            app_key: '1271687855',
+            num:perPageCount,
+            page:curPage
+        }
+    }).done(function (ret) {
+        console.log(ret)
+        setData(ret)
+        curPage++
+    }).fail(function () {
+        console.log('404')
+    }).always(function () {
+        isLoading = false
+    })
+}
+
+
+ function setData($data) {
+         $data.data.forEach(function (news) {
+             var tpl = `
+                        <div class="new-box">
+                        <a href="" target="_blank">
+                            <img src="" alt="">
+                        </a>
+                        <div class="detail">
+                        <h4></h4>
+                        <p></p>
+                        </div>
+                        </div>`
+             var $list = $(tpl)
+             $list.find('img').attr('src',news.img_url)
+             $list.find('h4').text(news.short_name)
+             $list.find('p').text(news.short_intro)
+             $list.find('a').attr('href',news.url)
+             $list.find('img').on('load',function () {
+                 waterfall()
+             })
+             $('main').append($list)
+         })
+ }
+
+ function waterfall() {
+     var index
+     index = Math.floor(($('main').width())/($('.new-box').outerWidth(true)))
+     var sz = []
+     for(var i=0;i<index;i++){
+         sz[i]= 0
+     }
+     $('.new-box').each(function () {
+         var minValue = sz[0]
+         var minIndex = 0
+         for(var i=0;i<index;i++){
+             if(sz[i]<minValue){
+                 minValue = sz[i]
+                 minIndex = i
+             }
+         }
+         $(this).css({
+             left:minIndex * $(this).outerWidth(true),
+             top:minValue
+         })
+         sz[minIndex] = $(this).outerHeight(true) + sz[minIndex]
+     })
+
+ }
+
+
+
+
+    app={
+
+     start:function () {
+         getData()
+         this.listen()
+     },
+     listen:function () {
+
+         $(window).on('scroll',function () {
+             if($(document).height() <= $(window).height() + $(window).scrollTop()) {
+                 if(clock){
+                     clearTimeout(clock)
+                 }
+                 clock = setTimeout(function(){
+                     getData()
+                 }, 100)
+             }
+         })
+
+
+         $(window).on('resize',function () {
+             waterfall()
+         })
+
+     }
+
+    }
+
+
+    app.start()
+
+</script>
+</body>
+</html>
